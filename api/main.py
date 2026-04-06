@@ -26,11 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create tables on startup, but catch connection errors to avoid crashing the server on boot
-try:
-    create_tables()
-except Exception as e:
-    print(f"Warning: Failed to connect to database on startup. Error: {e}")
+# We do NOT create tables on startup in serverless environments
+# because it requires a synchronous database connection which can timeout Vercel's 10s boot limit.
+# Tables should be created manually via a script or migration.
+print("Initialization: skipping create_tables() to avoid Vercel boot timeouts.")
 
 # Serve frontend static files
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
