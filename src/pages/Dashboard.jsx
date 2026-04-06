@@ -154,7 +154,7 @@ const Dashboard = ({ user, onLogout }) => {
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-6 py-8 space-y-8">
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold flex items-center gap-2">
-            ⚠️ {error} - Please ensure the backend is running at http://localhost:8000
+            ⚠️ {error} - Please check your network connection or API status.
           </div>
         )}
 
