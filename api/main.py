@@ -7,6 +7,11 @@ from sqlalchemy import func, text
 from datetime import date as date_type
 import shutil
 import os
+import sys
+
+# Ensure local imports work reliably in Vercel serverless environment
+sys.path.insert(0, os.path.dirname(__file__))
+
 import io
 from datetime import datetime
 from typing import List, Optional
