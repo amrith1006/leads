@@ -18,6 +18,7 @@ engine = create_engine(
     pool_pre_ping=True,     # auto-reconnect if connection drops
     pool_recycle=3600,      # recycle connections every 1 hr
     echo=False,
+    connect_args={"ssl": {}} if "aivencloud" in DATABASE_URL else {}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
