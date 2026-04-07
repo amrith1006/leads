@@ -3,18 +3,6 @@ import openpyxl
 from typing import List, Dict, Any
 
 
-# Status values that are valid (from dropdown column F)
-VALID_STATUSES = {
-    "first call", "followup call", "rate call", "assigned to branch",
-    "appointment call", "customer not interested",
-    "customer interested need time", "customer dropped"
-}
-
-# Lead sources
-VALID_SOURCES = {
-    "whatsapp", "website", "justdial", "walkin", "telecall"
-}
-
 
 def read_excel_file(file_source) -> List[Dict[str, Any]]:
     import io

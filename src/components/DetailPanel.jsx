@@ -2,7 +2,7 @@ import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, User, Phone, MapPin, Tag, MessageSquare, History, CheckCircle2, AlertCircle } from 'lucide-react'
 
-const DetailPanel = ({ lead, isOpen, onClose }) => {
+const DetailPanel = ({ lead, isOpen, onClose, onStatusChange }) => {
   if (!lead) return null;
 
   return (
@@ -48,14 +48,27 @@ const DetailPanel = ({ lead, isOpen, onClose }) => {
                 <div>
                   <h3 className="text-2xl font-extrabold text-slate-900">{lead.customer_name}</h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      lead.status === 'Interested' ? 'bg-blue-100 text-blue-700' :
-                      lead.status === 'Qualified' ? 'bg-green-100 text-green-700' :
-                      lead.status === 'Not Interested' ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-600'
-                    }`}>
-                      {lead.status}
-                    </span>
+                    <select
+                      value={lead.status || 'New'}
+                      onChange={(e) => onStatusChange && onStatusChange(lead.id, e.target.value)}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer appearance-none text-center ${
+                        lead.status === 'Interested' ? 'bg-blue-100 text-blue-700' :
+                        lead.status === 'Qualified' ? 'bg-green-100 text-green-700' :
+                        lead.status === 'Not Interested' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
+                      } hover:scale-105 transition-transform`}
+                      style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                    >
+                      <option value="First Call">First Call</option>
+                      <option value="Follow-up">Follow-up</option>
+                      <option value="Rate Call">Rate Call</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="Interested">Interested</option>
+                      <option value="Qualified">Qualified</option>
+                      <option value="Not Interested">Not Interested</option>
+                      <option value="Completed">Completed</option>
+                      <option value="New">New</option>
+                    </select>
                     <span className="text-xs text-slate-400 font-medium whitespace-nowrap">ID: #00{lead.id}</span>
                   </div>
                 </div>
@@ -114,7 +127,7 @@ const DetailPanel = ({ lead, isOpen, onClose }) => {
               </div>
 
               {/* Activity Timeline */}
-              <div className="space-y-4 pt-4">
+              {/* <div className="space-y-4 pt-4">
                 <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest flex items-center gap-1.5">
                   <History className="w-3 h-3" /> Activity Timeline
                 </label>
@@ -134,19 +147,11 @@ const DetailPanel = ({ lead, isOpen, onClose }) => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
             </div>
 
-            {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-white border-t border-slate-100 p-6 flex gap-3">
-              <button className="flex-1 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98]">
-                Contact Customer
-              </button>
-              <button className="px-6 py-3 bg-slate-100 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-200 transition-all">
-                Edit Lead
-              </button>
-            </div>
+
           </motion.div>
         </>
       )}

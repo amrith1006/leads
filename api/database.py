@@ -8,7 +8,7 @@ from datetime import datetime
 # Database Configuration — uses environment variable for production
 # ============================================================
 # Default local MySQL string
-DEFAULT_LOCAL_DB = "mysql+pymysql://root:password@localhost:3306/la?charset=utf8mb4"
+DEFAULT_LOCAL_DB = "mysql+pymysql://root:admin123@localhost:3306/la?charset=utf8mb4"
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_LOCAL_DB).strip()# ============================================================
 
 # Validate the DATABASE_URL format safely

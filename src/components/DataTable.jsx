@@ -1,7 +1,12 @@
 import React from 'react'
 import { ChevronRight, ExternalLink, Mail, Phone, MoreHorizontal } from 'lucide-react'
 
-const DataTable = ({ leads, onRowClick }) => {
+const DataTable = ({ leads, totalLeads = 0, currentPage = 1, onPageChange, pageSize = 50, onRowClick, onStatusChange, availableStatuses = [] }) => {
+  const totalPages = Math.ceil(totalLeads / pageSize) || 1;
+  const standardStatuses = ['First Call', 'Follow-up', 'Rate Call', 'Assigned', 'Interested', 'Qualified', 'Not Interested', 'Completed', 'New']
+  // Make sure we have a unique list of statuses, with the first letter properly capitalized
+  const allStatuses = [...new Set([...standardStatuses, ...availableStatuses])]
+
   return (
     <div className="flex flex-col">
       <div className="overflow-x-auto">
@@ -50,14 +55,22 @@ const DataTable = ({ leads, onRowClick }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border ${
-                          lead.status === 'Interested' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                          lead.status === 'Qualified' ? 'bg-green-50 text-green-600 border-green-100' :
-                          lead.status === 'Not Interested' ? 'bg-red-50 text-red-600 border-red-100' :
-                          'bg-slate-50 text-slate-600 border-slate-100'
-                        }`}>
-                          {lead.status}
-                        </span>
+                        <select
+                          value={lead.status || 'New'}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => onStatusChange && onStatusChange(lead.id, e.target.value)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border outline-none cursor-pointer appearance-none text-center ${
+                            lead.status === 'Interested' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                            lead.status === 'Qualified' ? 'bg-green-50 text-green-600 border-green-100' :
+                            lead.status === 'Not Interested' ? 'bg-red-50 text-red-600 border-red-100' :
+                            'bg-slate-50 text-slate-600 border-slate-100 ring-1 ring-slate-200'
+                          } hover:scale-105 transition-transform`}
+                          style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                        >
+                          {allStatuses.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-slate-500 line-clamp-1 max-w-[200px]">{lead.remarks}</p>
@@ -82,15 +95,29 @@ const DataTable = ({ leads, onRowClick }) => {
         </div>
       </div>
 
-      {/* Pagination Footer - Static */}
+      {/* Pagination Footer */}
       <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500">Showing {leads.length} of {leads.length} leads</span>
+        <span className="text-xs font-semibold text-slate-500">
+          Showing {leads.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalLeads)} of {totalLeads} leads
+        </span>
         <div className="flex items-center gap-2">
-          <button disabled className="px-3 py-1.5 text-xs font-bold text-slate-400 bg-white border border-slate-200 rounded-lg opacity-50 cursor-not-allowed">Previous</button>
+          <button 
+            onClick={() => onPageChange && onPageChange(currentPage - 1)}
+            disabled={currentPage === 1} 
+            className={`px-3 py-1.5 text-xs font-bold ${currentPage === 1 ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer'} bg-white border border-slate-200 rounded-lg`}
+          >
+            Previous
+          </button>
           <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center text-xs font-bold bg-blue-600 text-white rounded-lg shadow-sm">1</button>
+            <span className="px-3 text-xs font-bold text-slate-700">Page {currentPage} of {totalPages}</span>
           </div>
-          <button disabled className="px-3 py-1.5 text-xs font-bold text-slate-400 bg-white border border-slate-200 rounded-lg opacity-50 cursor-not-allowed">Next</button>
+          <button 
+            onClick={() => onPageChange && onPageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages} 
+            className={`px-3 py-1.5 text-xs font-bold ${currentPage >= totalPages ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer'} bg-white border border-slate-200 rounded-lg`}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import ChartsSection from '../components/ChartsSection'
 import Filters from '../components/Filters'
 import DataTable from '../components/DataTable'
 import DetailPanel from '../components/DetailPanel'
-import { getDashboardStats, getLeads } from '../services/api'
+import { getDashboardStats, getLeads, updateLeadStatus } from '../services/api'
 
 const Dashboard = ({ user, onLogout }) => {
   const [selectedLead, setSelectedLead] = useState(null)
@@ -28,12 +28,21 @@ const Dashboard = ({ user, onLogout }) => {
   })
   
   const [leads, setLeads] = useState([])
+  const [totalLeads, setTotalLeads] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 50
+
   const [filters, setFilters] = useState({
     source: '',
     employee: '',
     status: '',
     search: '',
   })
+
+  // Reset pagination to first page if filters or dates change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters, dateRange.from, dateRange.to])
 
   // Fetch Dashboard Statistics (KPIs and Charts)
   const fetchStats = useCallback(async () => {
@@ -55,16 +64,19 @@ const Dashboard = ({ user, onLogout }) => {
         source: filters.source,
         search: filters.search,
         date_from: dateRange.from,
-        date_to: dateRange.to
+        date_to: dateRange.to,
+        skip: (currentPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE
       })
       setLeads(data.leads || [])
+      setTotalLeads(data.total || 0)
     } catch (err) {
       console.error('Error fetching leads:', err)
       setError('Could not load leads.')
     } finally {
       setLoading(false)
     }
-  }, [filters.status, filters.source, filters.search, dateRange.from, dateRange.to])
+  }, [filters.status, filters.source, filters.search, dateRange.from, dateRange.to, currentPage])
 
   const handleFileUpload = async (file) => {
     try {
@@ -92,7 +104,7 @@ const Dashboard = ({ user, onLogout }) => {
     fetchStats()
   }, [fetchStats])
 
-  // Refetch leads when filters or date change
+  // Refetch leads when filters, dates, or page changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchLeads()
@@ -107,6 +119,21 @@ const Dashboard = ({ user, onLogout }) => {
 
   const handleClosePanel = () => {
     setIsPanelOpen(false)
+  }
+
+  const handleStatusUpdate = async (leadId, newStatus) => {
+    try {
+      await updateLeadStatus(leadId, newStatus)
+      if (selectedLead && selectedLead.id === leadId) {
+        setSelectedLead(prev => ({ ...prev, status: newStatus }))
+      }
+      // Refresh list and stats
+      await fetchStats()
+      await fetchLeads()
+    } catch (err) {
+      console.error('Status update failed:', err)
+      setError('Failed to update lead status.')
+    }
   }
 
   // Format data for KPI Cards
@@ -161,6 +188,49 @@ const Dashboard = ({ user, onLogout }) => {
         {/* KPI Section */}
         <KpiCards data={kpiCardsData} />
 
+        {/* Status Mini Cards — above charts */}
+        {(() => {
+          const sb = stats.status_breakdown
+          const getCount = (keys) => {
+            let total = 0
+            const lowerKeys = keys.map(k => k.toLowerCase())
+            for (const [key, value] of Object.entries(sb)) {
+              if (lowerKeys.includes(key.toLowerCase())) {
+                total += value
+              }
+            }
+            return total
+          }
+          const miniCards = [
+            { label: 'First Call',  count: getCount(['first call','First Call']),  emoji: '✅', emojiBg: 'bg-green-100',  border: '#7C3AED' },
+            { label: 'Follow-Up',   count: getCount(['follow-up','Follow-up','Follow Up','follow up', 'followup call']), emoji: '🔄', emojiBg: 'bg-blue-100',   border: '#F59E0B' },
+            { label: 'Rate Call',   count: getCount(['rate call']),   emoji: '⭐', emojiBg: 'bg-yellow-100', border: '#A855F7' },
+            { label: 'Assigned',    count: getCount(['assigned', 'assigned to branch']), emoji: '📌', emojiBg: 'bg-orange-100',    border: '#22C55E' },
+            { label: 'Not Interested', count: getCount(['not interested']), emoji: '❌', emojiBg: 'bg-red-100', border: '#EF4444' },
+          ]
+          return (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {miniCards.map((c) => (
+                <div
+                  key={c.label}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden"
+                  style={{ borderTop: `3px solid ${c.border}` }}
+                >
+                  <div className="p-5 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-3xl font-extrabold text-slate-900 tracking-tight">{c.count}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{c.label}</p>
+                    </div>
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-sm ${c.emojiBg} group-hover:scale-110 transition-transform`}>
+                      {c.emoji}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Charts Section */}
         <ChartsSection data={chartsData} />
 
@@ -182,7 +252,13 @@ const Dashboard = ({ user, onLogout }) => {
           ) : (
             <DataTable 
               leads={leads} 
+              totalLeads={totalLeads}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              pageSize={PAGE_SIZE}
               onRowClick={handleRowClick} 
+              onStatusChange={handleStatusUpdate}
+              availableStatuses={Object.keys(stats.status_breakdown)}
             />
           )}
         </section>
@@ -193,6 +269,7 @@ const Dashboard = ({ user, onLogout }) => {
         lead={selectedLead} 
         isOpen={isPanelOpen} 
         onClose={handleClosePanel} 
+        onStatusChange={handleStatusUpdate}
       />
     </div>
   )
